@@ -1,236 +1,199 @@
-# 启动xv6并调试
+# Lab4: traps
 
-## 环境配置
+本实验探索如何使用陷阱实现系统调用。您将首先使用栈做一个热身练习，然后实现一个用户级陷阱处理的示例。
 
-以下步骤均以window（10或11）为标准，其它操作系统（如macOS、Ubuntu等）参考[2021年6.S081的tools](https://pdos.csail.mit.edu/6.S081/2021/tools.html)
 
-### 安装WSL2并添加子系统Ubuntu20.04
 
-可以参考该视频链接[link1](https://www.bilibili.com/video/BV1mX4y177dJ/)
+ Attention
 
-- 切换到桌面，键入`win+s`，进入搜索栏，输入`功能`二字，找到适用于**Linux的Windows子系统**和**虚拟平台**将它们两个勾选，如图所示：
+开始编码之前，请阅读xv6手册的第4章和相关源文件：
 
-- 切换到桌面，键入`win+s`，进入搜索栏，输入`cmd`，**分别**输入如下指令，安装WSL2
+- ***kernel/trampoline.S\***：涉及从用户空间到内核空间再到内核空间的转换的程序集
+- ***kernel/trap.c\***：处理所有中断的代码
+
+要启动实验，请切换到`traps`分支：
 
 ```bash
-# 安装最新版wsl
-wsl --update
-# 使用wsl2
-wsl --set-default-version 2
+$ git fetch
+$ git checkout traps
+$ make clean
 ```
 
-- 在上一步的基础上，输入如下指令，安装子系统**Ubuntu20.04**
+## RISC-V assembly (easy)
 
-```bash
-# 安装子系统Ubuntu20.04
-wsl.exe --install Ubuntu-20.04
+理解一点RISC-V汇编是很重要的，你应该在6.004中接触过。xv6仓库中有一个文件***user/call.c\***。执行`make fs.img`编译它，并在***user/call.asm\***中生成可读的汇编版本。
+
+阅读***call.asm\***中函数`g`、`f`和`main`的代码。RISC-V的使用手册在[参考页](https://pdos.csail.mit.edu/6.828/2020/reference.html)上。以下是您应该回答的一些问题（将答案存储在***answers-traps.txt\***文件中）：
+
+1. 哪些寄存器保存函数的参数？例如，在`main`对`printf`的调用中，哪个寄存器保存13？
+2. `main`的汇编代码中对函数`f`的调用在哪里？对`g`的调用在哪里(提示：编译器可能会将函数内联）
+3. `printf`函数位于哪个地址？
+4. 在`main`中`printf`的`jalr`之后的寄存器`ra`中有什么值？
+5. 运行以下代码。
+
+```c
+unsigned int i = 0x00646c72;
+printf("H%x Wo%s", 57616, &i);
 ```
 
-- 在子系统**Ubuntu20.04**中，输入用户名和密码，注册用户即可
+程序的输出是什么？这是将字节映射到字符的[ASCII码表](http://web.cs.mun.ca/~michael/c/ascii-table.html)。
 
-### 安装相关软件
+输出取决于RISC-V小端存储的事实。如果RISC-V是大端存储，为了得到相同的输出，你会把`i`设置成什么？是否需要将`57616`更改为其他值？
 
-**警告：接下来的操作请确保已经在Ubuntu-20.04子系统的终端页面中**
+[这里有一个小端和大端存储的描述](http://www.webopedia.com/TERM/b/big_endian.html)和一个[更异想天开的描述](http://www.networksorcery.com/enp/ien/ien137.txt)。
 
-在**Ubuntu-20.04**子系统的终端页面中，**分别**输入如下指令：
+1. 在下面的代码中，“`y=`”之后将打印什么(注：答案不是一个特定的值）？为什么会发生这种情况？
 
-```bash
-$ sudo apt-get update && sudo apt-get upgrade
-$ sudo apt-get install git build-essential gdb-multiarch qemu-system-misc gcc-riscv64-linux-gnu binutils-riscv64-linux-gnu
+```c
+printf("x=%d y=%d", 3);
 ```
 
-- `sudo`是特权用户指令的意思，使用特权用户指令会用到之前注册时的密码
+## Backtrace(moderate)
 
-- `$`和其之后的空格不用输入，可以理解为**分别**输入如下指令：
+回溯(Backtrace)通常对于调试很有用：它是一个存放于栈上用于指示错误发生位置的函数调用列表。
 
-  ```
-  sudo apt-get update && sudo apt-get upgrade
-  sudo apt-get install git build-essential gdb-multiarch qemu-system-misc gcc-riscv64-linux-gnu binutils-riscv64-linux-gnu
-  ```
-
-  - 之所以标识`$`和其之后的空格是为了**表明我们在终端进行输入**，之后不再重复这点
-
-### 在window中安装Git
-
-请自行查找如何在window中安装Git，当**Ubuntu-20.04子系统**因为网络问题无法访问Git相关链接，可以在window中进行相关Git操作
-
-### 安装并启动xv6
-
-**警告：接下来的操作请确保已经在Ubuntu-20.04子系统的终端页面中**
-
-第一步，克隆xv6
+在***kernel/printf.c\***中实现名为`backtrace()`的函数。在`sys_sleep`中插入一个对此函数的调用，然后运行`bttest`，它将会调用`sys_sleep`。你的输出应该如下所示：
 
 ```bash
-$ git clone https://github.com/duilec/xv6-2021-labs.git
-Cloning into 'xv6-labs-2021'...
+backtrace:
+0x0000000080002cda
+0x0000000080002bb6
+0x0000000080002898
+```
+
+ 在`bttest`退出qemu后。在你的终端：地址或许会稍有不同，但如果你运行`addr2line -e kernel/kernel`（或`riscv64-unknown-elf-addr2line -e kernel/kernel`），并将上面的地址剪切粘贴如下：
+
+```bash
+$ addr2line -e kernel/kernel
+0x0000000080002de2
+0x0000000080002f4a
+0x0000000080002bfc
+Ctrl-D
+```
+
+ 你应该看到类似下面的输出：
+
+```
+kernel/sysproc.c:74
+kernel/syscall.c:224
+kernel/trap.c:85
+```
+
+ 编译器向每一个栈帧中放置一个帧指针（frame pointer）保存调用者帧指针的地址。你的`backtrace`应当使用这些帧指针来遍历栈，并在每个栈帧中打印保存的返回地址。
+
+**提示：**
+
+- 在***kernel/defs.h\***中添加`backtrace`的原型，那样你就能在`sys_sleep`中引用`backtrace`
+- GCC编译器将当前正在执行的函数的帧指针保存在`s0`寄存器，将下面的函数添加到***kernel/riscv.h\***
+
+```c
+static inline uint64
+r_fp()
+{
+  uint64 x;
+  asm volatile("mv %0, s0" : "=r" (x) );
+  return x;
+}
+```
+
+ 并在`backtrace`中调用此函数来读取当前的帧指针。这个函数使用[内联汇编](https://gcc.gnu.org/onlinedocs/gcc/Using-Assembly-Language-with-C.html)来读取`s0`
+
+- 这个[课堂笔记](https://pdos.csail.mit.edu/6.828/2020/lec/l-riscv-slides.pdf)中有张栈帧布局图。注意返回地址位于栈帧帧指针的固定偏移(-8)位置，并且保存的帧指针位于帧指针的固定偏移(-16)位置
+
+![img](https://xv6.dgs.zone/labs/requirements/images/p2.png)
+
+- XV6在内核中以页面对齐的地址为每个栈分配一个页面。你可以通过`PGROUNDDOWN(fp)`和`PGROUNDUP(fp)`（参见***kernel/riscv.h\***）来计算栈页面的顶部和底部地址。这些数字对于`backtrace`终止循环是有帮助的。
+
+一旦你的`backtrace`能够运行，就在***kernel/printf.c\***的`panic`中调用它，那样你就可以在`panic`发生时看到内核的`backtrace`。
+
+## Alarm(Hard)
+
+
+
+ YOUR JOB
+
+在这个练习中你将向XV6添加一个特性，在进程使用CPU的时间内，XV6定期向进程发出警报。这对于那些希望限制CPU时间消耗的受计算限制的进程，或者对于那些计算的同时执行某些周期性操作的进程可能很有用。更普遍的来说，你将实现用户级中断/故障处理程序的一种初级形式。例如，你可以在应用程序中使用类似的一些东西处理页面故障。如果你的解决方案通过了`alarmtest`和`usertests`就是正确的。
+
+你应当添加一个新的`sigalarm(interval, handler)`系统调用，如果一个程序调用了`sigalarm(n, fn)`，那么每当程序消耗了CPU时间达到n个“滴答”，内核应当使应用程序函数`fn`被调用。当`fn`返回时，应用应当在它离开的地方恢复执行。在XV6中，一个滴答是一段相当任意的时间单元，取决于硬件计时器生成中断的频率。如果一个程序调用了`sigalarm(0, 0)`，系统应当停止生成周期性的报警调用。
+
+你将在XV6的存储库中找到名为***user/alarmtest.c\***的文件。将其添加到***Makefile\***。注意：你必须添加了`sigalarm`和`sigreturn`系统调用后才能正确编译（往下看）。
+
+`alarmtest`在`test0`中调用了`sigalarm(2, periodic)`来要求内核每隔两个滴答强制调用`periodic()`，然后旋转一段时间。你可以在***user/alarmtest.asm\***中看到`alarmtest`的汇编代码，这或许会便于调试。当`alarmtest`产生如下输出并且`usertests`也能正常运行时，你的方案就是正确的：
+
+```bash
+$ alarmtest
+test0 start
+........alarm!
+test0 passed
+test1 start
+...alarm!
+..alarm!
+...alarm!
+..alarm!
+...alarm!
+..alarm!
+...alarm!
+..alarm!
+...alarm!
+..alarm!
+test1 passed
+test2 start
+................alarm!
+test2 passed
+$ usertests
 ...
-$ cd xv6-labs-2021
+ALL TESTS PASSED
+$
 ```
 
-第二步，暂存当前分支，并切换分支到`util`
+ 当你完成后，你的方案也许仅有几行代码，但如何正确运行是一个棘手的问题。我们将使用原始存储库中的***alarmtest.c\***版本测试您的代码。你可以修改***alarmtest.c\***来帮助调试，但是要确保原来的`alarmtest`显示所有的测试都通过了。
+
+### test0: invoke handler(调用处理程序)
+
+首先修改内核以跳转到用户空间中的报警处理程序，这将导致`test0`打印“alarm!”。不用担心输出“alarm!”之后会发生什么；如果您的程序在打印“alarm！”后崩溃，对于目前来说也是正常的。以下是一些**提示**：
+
+- 您需要修改***Makefile\***以使***alarmtest.c\***被编译为xv6用户程序。
+- 放入***user/user.h\***的正确声明是：
+
+```c
+int sigalarm(int ticks, void (*handler)());
+int sigreturn(void);
+```
+
+- 更新***user/usys.pl\***（此文件生成***user/usys.S\***）、***kernel/syscall.h\***和***kernel/syscall.c\***以允许`alarmtest`调用`sigalarm`和`sigreturn`系统调用。
+- 目前来说，你的`sys_sigreturn`系统调用返回应该是零。
+- 你的`sys_sigalarm()`应该将报警间隔和指向处理程序函数的指针存储在`struct proc`的新字段中（位于***kernel/proc.h\***）。
+- 你也需要在`struct proc`新增一个新字段。用于跟踪自上一次调用（或直到下一次调用）到进程的报警处理程序间经历了多少滴答；您可以在***proc.c\***的`allocproc()`中初始化`proc`字段。
+- 每一个滴答声，硬件时钟就会强制一个中断，这个中断在***kernel/trap.c\***中的`usertrap()`中处理。
+- 如果产生了计时器中断，您只想操纵进程的报警滴答；你需要写类似下面的代码
+
+```c
+if(which_dev == 2) ...
+```
+
+- 仅当进程有未完成的计时器时才调用报警函数。请注意，用户报警函数的地址可能是0（例如，在***user/alarmtest.asm\***中，`periodic`位于地址0）。
+- 您需要修改`usertrap()`，以便当进程的报警间隔期满时，用户进程执行处理程序函数。当RISC-V上的陷阱返回到用户空间时，什么决定了用户空间代码恢复执行的指令地址？
+- 如果您告诉qemu只使用一个CPU，那么使用gdb查看陷阱会更容易，这可以通过运行
 
 ```bash
-$ git stash
-$ git checkout util
+make CPUS=1 qemu-gdb
 ```
 
-第三步，构建并运行`xv6`
+- 如果`alarmtest`打印“alarm!”，则您已成功。
 
-```bash
-$ make qemu
-```
+### test1/test2(): resume interrupted code(恢复被中断的代码)
 
-会有如下结果
+`alarmtest`打印“alarm!”后，很可能会在`test0`或`test1`中崩溃，或者`alarmtest`（最后）打印“test1 failed”，或者`alarmtest`未打印“test1 passed”就退出。要解决此问题，必须确保完成报警处理程序后返回到用户程序最初被计时器中断的指令执行。必须确保寄存器内容恢复到中断时的值，以便用户程序在报警后可以不受干扰地继续运行。最后，您应该在每次报警计数器关闭后“重新配置”它，以便周期性地调用处理程序。
 
-```bash
-riscv64-unknown-elf-gcc    -c -o kernel/entry.o kernel/entry.S
-riscv64-unknown-elf-gcc -Wall -Werror -O -fno-omit-frame-pointer -ggdb -DSOL_UTIL -MD -mcmodel=medany -ffreestanding -fno-common -nostdlib -mno-relax -I. -fno-stack-protector -fno-pie -no-pie   -c -o kernel/start.o kernel/start.c
-...  
-balloc: first 591 blocks have been allocated
-balloc: write bitmap block at sector 45
-qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 3 -nographic -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+作为一个起始点，我们为您做了一个设计决策：用户报警处理程序需要在完成后调用`sigreturn`系统调用。请查看***alarmtest.c\***中的`periodic`作为示例。这意味着您可以将代码添加到`usertrap`和`sys_sigreturn`中，这两个代码协同工作，以使用户进程在处理完警报后正确恢复。
 
-xv6 kernel is booting
+**提示：**
 
-hart 2 starting
-hart 1 starting
-init: starting sh
-$ 
-```
+- 您的解决方案将要求您保存和恢复寄存器——您需要保存和恢复哪些寄存器才能正确恢复中断的代码？(提示：会有很多）
+- 当计时器关闭时，让`usertrap`在`struct proc`中保存足够的状态，以使`sigreturn`可以正确返回中断的用户代码。
+- 防止对处理程序的重复调用——如果处理程序还没有返回，内核就不应该再次调用它。`test2`测试这个。
+- 一旦通过`test0`、`test1`和`test2`，就运行`usertests`以确保没有破坏内核的任何其他部分。
 
-第四步，简单地进行测试，输入指令`ls`
+# 可选的挑战练习
 
-```bash
-$ ls
-```
-
-会有如下结果
-
-```bash
-.              1 1 1024
-..             1 1 1024
-README         2 2 2059
-xargstest.sh   2 3 93
-cat            2 4 24256
-echo           2 5 23080
-forktest       2 6 13272
-grep           2 7 27560
-init           2 8 23816
-kill           2 9 23024
-ln             2 10 22880
-ls             2 11 26448
-mkdir          2 12 23176
-rm             2 13 23160
-sh             2 14 41976
-stressfs       2 15 24016
-usertests      2 16 148456
-grind          2 17 38144
-wc             2 18 25344
-zombie         2 19 22408
-console        3 20 0
-```
-
-
-
-### 退出xv6，回到终端
-
-在xv6中，**先同时按`ctrl+a`，然后松开，最后只按`x`**，即可退出xv6
-
-### 可能遇到的问题
-
-#### 安装相关软件时的网络问题
-
-- 原因：下载时需要连接到国外网站
-- 解决方案：使用清华源
-
-#### 最新版本
-
-可以使用MIT[最新课程](https://pdos.csail.mit.edu/6.S081/2023/schedule.html)的版本，实验内容有部分差异link0
-
-## 调试和编程的平台
-
-### 调试平台
-
-软件要求：在windos中安装VSCode（必须），在**Ubuntu-20.04**子系统中安装Vim（视个人需要）
-
-建议使用print函数（即调用C语言库的print函数，在特定的地方打印日志）或者GDB调试
-
-- 如何使用GDB调试？
-  过程中需要打开两个终端，一个用来启动qemu，一个用来正常debug（调试）
-  建议debug时，启动qemu只用一个cpu
-  
-  第一步，在一个终端中输入
-  
-  ```bash
-  $ make CPUS=1 qemu-gdb
-  ```
-  
-  会显示如下内容：
-  
-  ```bash
-  *** Now run 'gdb' in another window.
-  qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 -S -gdb tcp::26000
-  ```
-  
-  第二步，在另一个终端中输入
-  
-  ```bash
-  $ gdb-multiarch kernel/kernel
-  ```
-  
-  会显示如下内容，从而在这个终端进行调试
-  
-  ```bash
-  GNU gdb (Ubuntu 9.2-0ubuntu1~20.04.1) 9.2
-  Copyright (C) 2020 Free Software Foundation, Inc.
-  License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
-  This is free software: you are free to change and redistribute it.
-  There is NO WARRANTY, to the extent permitted by law.
-  Type "show copying" and "show warranty" for details.
-  This GDB was configured as "x86_64-linux-gnu".
-  Type "show configuration" for configuration details.
-  For bug reporting instructions, please see:
-  <http://www.gnu.org/software/gdb/bugs/>.
-  Find the GDB manual and other documentation resources online at:
-      <http://www.gnu.org/software/gdb/documentation/>.
-  
-  For help, type "help".
-  Type "apropos word" to search for commands related to "word"...
-  Reading symbols from kernel/kernel...
-  The target architecture is assumed to be riscv:rv64
-  0x0000000000001000 in ?? ()
-  (gdb)
-  ```
-
-进入GDB终端调试页面后如何进行调试，可以参考[link2](https://www.bilibili.com/video/BV1DY4y1a7YD/?spm_id_from=333.788&vd_source=167c726c8eff4e6707afa7867f993bb4)中文视频、[link3](https://www.bilibili.com/video/BV19k4y1C7kA?p=2&vd_source=167c726c8eff4e6707afa7867f993bb4)英文视频（这个主要看最后一部分）
-
-也可以使用VSCode图形化GDB调试，参考[link4](https://hitsz-cslab.gitee.io/os-labs/remote_env_gdb/)、[link5](https://hitsz-cslab.gitee.io/os-labs/remote_env_gdb2/)
-
-### 编程平台
-
-建议在终端安装Vim进行编程，或者链接到VSCode编程平台进行编程
-
-- 如何链接到VSCode编程平台？
-  第一步，在VSCode安装插件Remote - WSL
-  第二步，在**Ubuntu-20.04**子系统的终端页面中，进入项目页面，即是输入指令
-
-  ```bash
-  $ cd xv6-labs-2021
-  ```
-
-  第三步，链接到VSCode编程平台，即是输入指令
-
-  ```bash
-  $ code .
-  ```
-
-## 参考
-
-[Fall 2021: 6.S081](https://pdos.csail.mit.edu/6.S081/2021/)
-
-[WSL官网](https://learn.microsoft.com/zh-cn/windows/wsl/)
-
-[Ubuntu官网](https://cn.ubuntu.com/)
-
-[安装WSL2并添加子系统Ubuntu20.04视频链接](https://www.bilibili.com/video/BV1mX4y177dJ/)
-
+- 在`backtrace()`中打印函数的名称和行号，而不仅仅是数字化的地址。(hard)

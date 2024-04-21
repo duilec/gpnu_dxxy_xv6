@@ -1,236 +1,103 @@
-# 启动xv6并调试
+# Lab2: system calls
 
-## 环境配置
+在上一个实验室中，您使用系统调用编写了一些实用程序。在本实验室中，您将向xv6添加一些新的系统调用，这将帮助您了解它们是如何工作的，并使您了解xv6内核的一些内部结构。您将在以后的实验室中添加更多系统调用。
 
-以下步骤均以window（10或11）为标准，其它操作系统（如macOS、Ubuntu等）参考[2021年6.S081的tools](https://pdos.csail.mit.edu/6.S081/2021/tools.html)
+ Attention
 
-### 安装WSL2并添加子系统Ubuntu20.04
+在你开始写代码之前，请阅读xv6手册《book-riscv-rev1》的第2章、第4章的第4.3节和第4.4节以及相关源代码文件：
 
-可以参考该视频链接[link1](https://www.bilibili.com/video/BV1mX4y177dJ/)
+- 系统调用的用户空间代码在***user/user.h\***和***user/usys.pl\***中。
+- 内核空间代码是***kernel/syscall.h\***、***kernel/syscall.c\***。
+- 与进程相关的代码是***kernel/proc.h\***和***kernel/proc.c\***。
 
-- 切换到桌面，键入`win+s`，进入搜索栏，输入`功能`二字，找到适用于**Linux的Windows子系统**和**虚拟平台**将它们两个勾选，如图所示：
-
-- 切换到桌面，键入`win+s`，进入搜索栏，输入`cmd`，**分别**输入如下指令，安装WSL2
+要开始本章实验，请将代码切换到**syscall**分支：
 
 ```bash
-# 安装最新版wsl
-wsl --update
-# 使用wsl2
-wsl --set-default-version 2
+$ git fetch
+$ git checkout syscall
+$ make clean
 ```
 
-- 在上一步的基础上，输入如下指令，安装子系统**Ubuntu20.04**
+如果运行`make grade`，您将看到测试分数的脚本无法执行`trace`和`sysinfotest`。您的工作是添加必要的系统调用和存根（stubs）以使它们工作。
+
+## System call tracing（moderate）
+
+
+
+ YOUR JOB
+
+在本作业中，您将添加一个系统调用跟踪功能，该功能可能会在以后调试实验时对您有所帮助。您将创建一个新的`trace`系统调用来控制跟踪。它应该有一个参数，这个参数是一个整数“掩码”（mask），它的比特位指定要跟踪的系统调用。例如，要跟踪`fork`系统调用，程序调用`trace(1 << SYS_fork)`，其中`SYS_fork`是***kernel/syscall.h\***中的系统调用编号。如果在掩码中设置了系统调用的编号，则必须修改xv6内核，以便在每个系统调用即将返回时打印出一行。该行应该包含进程id、系统调用的名称和返回值；您不需要打印系统调用参数。`trace`系统调用应启用对调用它的进程及其随后派生的任何子进程的跟踪，但不应影响其他进程。
+
+我们提供了一个用户级程序版本的`trace`，它运行另一个启用了跟踪的程序（参见***user/trace.c\***）。完成后，您应该看到如下输出：
 
 ```bash
-# 安装子系统Ubuntu20.04
-wsl.exe --install Ubuntu-20.04
-```
-
-- 在子系统**Ubuntu20.04**中，输入用户名和密码，注册用户即可
-
-### 安装相关软件
-
-**警告：接下来的操作请确保已经在Ubuntu-20.04子系统的终端页面中**
-
-在**Ubuntu-20.04**子系统的终端页面中，**分别**输入如下指令：
-
-```bash
-$ sudo apt-get update && sudo apt-get upgrade
-$ sudo apt-get install git build-essential gdb-multiarch qemu-system-misc gcc-riscv64-linux-gnu binutils-riscv64-linux-gnu
-```
-
-- `sudo`是特权用户指令的意思，使用特权用户指令会用到之前注册时的密码
-
-- `$`和其之后的空格不用输入，可以理解为**分别**输入如下指令：
-
-  ```
-  sudo apt-get update && sudo apt-get upgrade
-  sudo apt-get install git build-essential gdb-multiarch qemu-system-misc gcc-riscv64-linux-gnu binutils-riscv64-linux-gnu
-  ```
-
-  - 之所以标识`$`和其之后的空格是为了**表明我们在终端进行输入**，之后不再重复这点
-
-### 在window中安装Git
-
-请自行查找如何在window中安装Git，当**Ubuntu-20.04子系统**因为网络问题无法访问Git相关链接，可以在window中进行相关Git操作
-
-### 安装并启动xv6
-
-**警告：接下来的操作请确保已经在Ubuntu-20.04子系统的终端页面中**
-
-第一步，克隆xv6
-
-```bash
-$ git clone https://github.com/duilec/xv6-2021-labs.git
-Cloning into 'xv6-labs-2021'...
+$ trace 32 grep hello README
+3: syscall read -> 1023
+3: syscall read -> 966
+3: syscall read -> 70
+3: syscall read -> 0
+$
+$ trace 2147483647 grep hello README
+4: syscall trace -> 0
+4: syscall exec -> 3
+4: syscall open -> 3
+4: syscall read -> 1023
+4: syscall read -> 966
+4: syscall read -> 70
+4: syscall read -> 0
+4: syscall close -> 0
+$
+$ grep hello README
+$
+$ trace 2 usertests forkforkfork
+usertests starting
+test forkforkfork: 407: syscall fork -> 408
+408: syscall fork -> 409
+409: syscall fork -> 410
+410: syscall fork -> 411
+409: syscall fork -> 412
+410: syscall fork -> 413
+409: syscall fork -> 414
+411: syscall fork -> 415
 ...
-$ cd xv6-labs-2021
+$
 ```
 
-第二步，暂存当前分支，并切换分支到`util`
+在上面的第一个例子中，`trace`调用`grep`，仅跟踪了`read`系统调用。`32`是`1<<SYS_read`。在第二个示例中，`trace`在运行`grep`时跟踪所有系统调用；`2147483647`将所有31个低位置为1。在第三个示例中，程序没有被跟踪，因此没有打印跟踪输出。在第四个示例中，在`usertests`中测试的`forkforkfork`中所有子孙进程的`fork`系统调用都被追踪。如果程序的行为如上所示，则解决方案是正确的（尽管进程ID可能不同）
 
-```bash
-$ git stash
-$ git checkout util
+**提示：**
+
+- 在***Makefile\***的**UPROGS**中添加`$U/_trace`
+- 运行`make qemu`，您将看到编译器无法编译***user/trace.c\***，因为系统调用的用户空间存根还不存在：将系统调用的原型添加到***user/user.h\***，存根添加到***user/usys.pl\***，以及将系统调用编号添加到***kernel/syscall.h\***，***Makefile\***调用perl脚本***user/usys.pl\***，它生成实际的系统调用存根***user/usys.S\***，这个文件中的汇编代码使用RISC-V的`ecall`指令转换到内核。一旦修复了编译问题（*注：如果编译还未通过，尝试先`make clean`，再执行`make qemu`*），就运行`trace 32 grep hello README`；但由于您还没有在内核中实现系统调用，执行将失败。
+- 在***kernel/sysproc.c\***中添加一个`sys_trace()`函数，它通过将参数保存到`proc`结构体（请参见***kernel/proc.h\***）里的一个新变量中来实现新的系统调用。从用户空间检索系统调用参数的函数在***kernel/syscall.c\***中，您可以在***kernel/sysproc.c\***中看到它们的使用示例。
+- 修改`fork()`（请参阅***kernel/proc.c\***）将跟踪掩码从父进程复制到子进程。
+- 修改***kernel/syscall.c\***中的`syscall()`函数以打印跟踪输出。您将需要添加一个系统调用名称数组以建立索引。
+
+## Sysinfo（moderate）
+
+
+
+ YOUR JOB
+
+在这个作业中，您将添加一个系统调用`sysinfo`，它收集有关正在运行的系统的信息。系统调用采用一个参数：一个指向`struct sysinfo`的指针（参见***kernel/sysinfo.h\***）。内核应该填写这个结构的字段：`freemem`字段应该设置为空闲内存的字节数，`nproc`字段应该设置为`state`字段不为`UNUSED`的进程数。我们提供了一个测试程序`sysinfotest`；如果输出“**sysinfotest: OK**”则通过。
+
+**提示：**
+
+- 在***Makefile\***的**UPROGS**中添加`$U/_sysinfotest`
+- 当运行`make qemu`时，***user/sysinfotest.c\***将会编译失败，遵循和上一个作业一样的步骤添加`sysinfo`系统调用。要在***user/user.h\***中声明`sysinfo()`的原型，需要预先声明`struct sysinfo`的存在：
+
+```c
+struct sysinfo;
+int sysinfo(struct sysinfo *);
 ```
 
-第三步，构建并运行`xv6`
+一旦修复了编译问题，就运行`sysinfotest`；但由于您还没有在内核中实现系统调用，执行将失败。
 
-```bash
-$ make qemu
-```
+- `sysinfo`需要将一个`struct sysinfo`复制回用户空间；请参阅`sys_fstat()`(***kernel/sysfile.c\***)和`filestat()`(***kernel/file.c\***)以获取如何使用`copyout()`执行此操作的示例。
+- 要获取空闲内存量，请在***kernel/kalloc.c\***中添加一个函数
+- 要获取进程数，请在***kernel/proc.c\***中添加一个函数
 
-会有如下结果
+# 可选的挑战
 
-```bash
-riscv64-unknown-elf-gcc    -c -o kernel/entry.o kernel/entry.S
-riscv64-unknown-elf-gcc -Wall -Werror -O -fno-omit-frame-pointer -ggdb -DSOL_UTIL -MD -mcmodel=medany -ffreestanding -fno-common -nostdlib -mno-relax -I. -fno-stack-protector -fno-pie -no-pie   -c -o kernel/start.o kernel/start.c
-...  
-balloc: first 591 blocks have been allocated
-balloc: write bitmap block at sector 45
-qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 3 -nographic -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
-
-xv6 kernel is booting
-
-hart 2 starting
-hart 1 starting
-init: starting sh
-$ 
-```
-
-第四步，简单地进行测试，输入指令`ls`
-
-```bash
-$ ls
-```
-
-会有如下结果
-
-```bash
-.              1 1 1024
-..             1 1 1024
-README         2 2 2059
-xargstest.sh   2 3 93
-cat            2 4 24256
-echo           2 5 23080
-forktest       2 6 13272
-grep           2 7 27560
-init           2 8 23816
-kill           2 9 23024
-ln             2 10 22880
-ls             2 11 26448
-mkdir          2 12 23176
-rm             2 13 23160
-sh             2 14 41976
-stressfs       2 15 24016
-usertests      2 16 148456
-grind          2 17 38144
-wc             2 18 25344
-zombie         2 19 22408
-console        3 20 0
-```
-
-
-
-### 退出xv6，回到终端
-
-在xv6中，**先同时按`ctrl+a`，然后松开，最后只按`x`**，即可退出xv6
-
-### 可能遇到的问题
-
-#### 安装相关软件时的网络问题
-
-- 原因：下载时需要连接到国外网站
-- 解决方案：使用清华源
-
-#### 最新版本
-
-可以使用MIT[最新课程](https://pdos.csail.mit.edu/6.S081/2023/schedule.html)的版本，实验内容有部分差异link0
-
-## 调试和编程的平台
-
-### 调试平台
-
-软件要求：在windos中安装VSCode（必须），在**Ubuntu-20.04**子系统中安装Vim（视个人需要）
-
-建议使用print函数（即调用C语言库的print函数，在特定的地方打印日志）或者GDB调试
-
-- 如何使用GDB调试？
-  过程中需要打开两个终端，一个用来启动qemu，一个用来正常debug（调试）
-  建议debug时，启动qemu只用一个cpu
-  
-  第一步，在一个终端中输入
-  
-  ```bash
-  $ make CPUS=1 qemu-gdb
-  ```
-  
-  会显示如下内容：
-  
-  ```bash
-  *** Now run 'gdb' in another window.
-  qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 -S -gdb tcp::26000
-  ```
-  
-  第二步，在另一个终端中输入
-  
-  ```bash
-  $ gdb-multiarch kernel/kernel
-  ```
-  
-  会显示如下内容，从而在这个终端进行调试
-  
-  ```bash
-  GNU gdb (Ubuntu 9.2-0ubuntu1~20.04.1) 9.2
-  Copyright (C) 2020 Free Software Foundation, Inc.
-  License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
-  This is free software: you are free to change and redistribute it.
-  There is NO WARRANTY, to the extent permitted by law.
-  Type "show copying" and "show warranty" for details.
-  This GDB was configured as "x86_64-linux-gnu".
-  Type "show configuration" for configuration details.
-  For bug reporting instructions, please see:
-  <http://www.gnu.org/software/gdb/bugs/>.
-  Find the GDB manual and other documentation resources online at:
-      <http://www.gnu.org/software/gdb/documentation/>.
-  
-  For help, type "help".
-  Type "apropos word" to search for commands related to "word"...
-  Reading symbols from kernel/kernel...
-  The target architecture is assumed to be riscv:rv64
-  0x0000000000001000 in ?? ()
-  (gdb)
-  ```
-
-进入GDB终端调试页面后如何进行调试，可以参考[link2](https://www.bilibili.com/video/BV1DY4y1a7YD/?spm_id_from=333.788&vd_source=167c726c8eff4e6707afa7867f993bb4)中文视频、[link3](https://www.bilibili.com/video/BV19k4y1C7kA?p=2&vd_source=167c726c8eff4e6707afa7867f993bb4)英文视频（这个主要看最后一部分）
-
-也可以使用VSCode图形化GDB调试，参考[link4](https://hitsz-cslab.gitee.io/os-labs/remote_env_gdb/)、[link5](https://hitsz-cslab.gitee.io/os-labs/remote_env_gdb2/)
-
-### 编程平台
-
-建议在终端安装Vim进行编程，或者链接到VSCode编程平台进行编程
-
-- 如何链接到VSCode编程平台？
-  第一步，在VSCode安装插件Remote - WSL
-  第二步，在**Ubuntu-20.04**子系统的终端页面中，进入项目页面，即是输入指令
-
-  ```bash
-  $ cd xv6-labs-2021
-  ```
-
-  第三步，链接到VSCode编程平台，即是输入指令
-
-  ```bash
-  $ code .
-  ```
-
-## 参考
-
-[Fall 2021: 6.S081](https://pdos.csail.mit.edu/6.S081/2021/)
-
-[WSL官网](https://learn.microsoft.com/zh-cn/windows/wsl/)
-
-[Ubuntu官网](https://cn.ubuntu.com/)
-
-[安装WSL2并添加子系统Ubuntu20.04视频链接](https://www.bilibili.com/video/BV1mX4y177dJ/)
-
+- 打印所跟踪的系统调用的参数（easy）。
+- 计算平均负载并通过`sysinfo`导出（moderate）。

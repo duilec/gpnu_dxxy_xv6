@@ -1,236 +1,123 @@
-# 启动xv6并调试
+# Lab3: page tables
 
-## 环境配置
+在本实验室中，您将探索页表并对其进行修改，以简化将数据从用户空间复制到内核空间的函数。
 
-以下步骤均以window（10或11）为标准，其它操作系统（如macOS、Ubuntu等）参考[2021年6.S081的tools](https://pdos.csail.mit.edu/6.S081/2021/tools.html)
 
-### 安装WSL2并添加子系统Ubuntu20.04
 
-可以参考该视频链接[link1](https://www.bilibili.com/video/BV1mX4y177dJ/)
+ Attention
 
-- 切换到桌面，键入`win+s`，进入搜索栏，输入`功能`二字，找到适用于**Linux的Windows子系统**和**虚拟平台**将它们两个勾选，如图所示：
+开始编码之前，请阅读xv6手册的第3章和相关文件：
 
-- 切换到桌面，键入`win+s`，进入搜索栏，输入`cmd`，**分别**输入如下指令，安装WSL2
+- ***kernel/memlayout.h\***，它捕获了内存的布局。
+- ***kernel/vm.c\***，其中包含大多数虚拟内存（VM）代码。
+- ***kernel/kalloc.c\***，它包含分配和释放物理内存的代码。
 
-```bash
-# 安装最新版wsl
-wsl --update
-# 使用wsl2
-wsl --set-default-version 2
-```
-
-- 在上一步的基础上，输入如下指令，安装子系统**Ubuntu20.04**
+要启动实验，请切换到pgtbl分支：
 
 ```bash
-# 安装子系统Ubuntu20.04
-wsl.exe --install Ubuntu-20.04
+$ git fetch
+$ git checkout pgtbl
+$ make clean
 ```
 
-- 在子系统**Ubuntu20.04**中，输入用户名和密码，注册用户即可
+## Print a page table (easy)
 
-### 安装相关软件
+为了帮助您了解RISC-V页表，也许为了帮助将来的调试，您的第一个任务是编写一个打印页表内容的函数。
 
-**警告：接下来的操作请确保已经在Ubuntu-20.04子系统的终端页面中**
 
-在**Ubuntu-20.04**子系统的终端页面中，**分别**输入如下指令：
 
-```bash
-$ sudo apt-get update && sudo apt-get upgrade
-$ sudo apt-get install git build-essential gdb-multiarch qemu-system-misc gcc-riscv64-linux-gnu binutils-riscv64-linux-gnu
+ YOUR JOB
+
+定义一个名为`vmprint()`的函数。它应当接收一个`pagetable_t`作为参数，并以下面描述的格式打印该页表。在`exec.c`中的`return argc`之前插入`if(p->pid==1) vmprint(p->pagetable)`，以打印第一个进程的页表。如果你通过了`pte printout`测试的`make grade`，你将获得此作业的满分。
+
+现在，当您启动xv6时，它应该像这样打印输出来描述第一个进程刚刚完成`exec()`ing`init`时的页表：
+
+```
+page table 0x0000000087f6e000
+..0: pte 0x0000000021fda801 pa 0x0000000087f6a000
+.. ..0: pte 0x0000000021fda401 pa 0x0000000087f69000
+.. .. ..0: pte 0x0000000021fdac1f pa 0x0000000087f6b000
+.. .. ..1: pte 0x0000000021fda00f pa 0x0000000087f68000
+.. .. ..2: pte 0x0000000021fd9c1f pa 0x0000000087f67000
+..255: pte 0x0000000021fdb401 pa 0x0000000087f6d000
+.. ..511: pte 0x0000000021fdb001 pa 0x0000000087f6c000
+.. .. ..510: pte 0x0000000021fdd807 pa 0x0000000087f76000
+.. .. ..511: pte 0x0000000020001c0b pa 0x0000000080007000
 ```
 
-- `sudo`是特权用户指令的意思，使用特权用户指令会用到之前注册时的密码
+第一行显示`vmprint`的参数。之后的每行对应一个PTE，包含树中指向页表页的PTE。每个PTE行都有一些“`..`”的缩进表明它在树中的深度。每个PTE行显示其在页表页中的PTE索引、PTE比特位以及从PTE提取的物理地址。不要打印无效的PTE。在上面的示例中，顶级页表页具有条目0和255的映射。条目0的下一级只映射了索引0，该索引0的下一级映射了条目0、1和2。
 
-- `$`和其之后的空格不用输入，可以理解为**分别**输入如下指令：
+您的代码可能会发出与上面显示的不同的物理地址。条目数和虚拟地址应相同。
 
-  ```
-  sudo apt-get update && sudo apt-get upgrade
-  sudo apt-get install git build-essential gdb-multiarch qemu-system-misc gcc-riscv64-linux-gnu binutils-riscv64-linux-gnu
-  ```
+**一些提示：**
 
-  - 之所以标识`$`和其之后的空格是为了**表明我们在终端进行输入**，之后不再重复这点
-
-### 在window中安装Git
-
-请自行查找如何在window中安装Git，当**Ubuntu-20.04子系统**因为网络问题无法访问Git相关链接，可以在window中进行相关Git操作
-
-### 安装并启动xv6
-
-**警告：接下来的操作请确保已经在Ubuntu-20.04子系统的终端页面中**
-
-第一步，克隆xv6
-
-```bash
-$ git clone https://github.com/duilec/xv6-2021-labs.git
-Cloning into 'xv6-labs-2021'...
-...
-$ cd xv6-labs-2021
-```
-
-第二步，暂存当前分支，并切换分支到`util`
-
-```bash
-$ git stash
-$ git checkout util
-```
-
-第三步，构建并运行`xv6`
-
-```bash
-$ make qemu
-```
-
-会有如下结果
-
-```bash
-riscv64-unknown-elf-gcc    -c -o kernel/entry.o kernel/entry.S
-riscv64-unknown-elf-gcc -Wall -Werror -O -fno-omit-frame-pointer -ggdb -DSOL_UTIL -MD -mcmodel=medany -ffreestanding -fno-common -nostdlib -mno-relax -I. -fno-stack-protector -fno-pie -no-pie   -c -o kernel/start.o kernel/start.c
-...  
-balloc: first 591 blocks have been allocated
-balloc: write bitmap block at sector 45
-qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 3 -nographic -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
-
-xv6 kernel is booting
-
-hart 2 starting
-hart 1 starting
-init: starting sh
-$ 
-```
-
-第四步，简单地进行测试，输入指令`ls`
-
-```bash
-$ ls
-```
-
-会有如下结果
-
-```bash
-.              1 1 1024
-..             1 1 1024
-README         2 2 2059
-xargstest.sh   2 3 93
-cat            2 4 24256
-echo           2 5 23080
-forktest       2 6 13272
-grep           2 7 27560
-init           2 8 23816
-kill           2 9 23024
-ln             2 10 22880
-ls             2 11 26448
-mkdir          2 12 23176
-rm             2 13 23160
-sh             2 14 41976
-stressfs       2 15 24016
-usertests      2 16 148456
-grind          2 17 38144
-wc             2 18 25344
-zombie         2 19 22408
-console        3 20 0
-```
+- 你可以将`vmprint()`放在***kernel/vm.c\***中
+- 使用定义在***kernel/riscv.h\***末尾处的宏
+- 函数`freewalk`可能会对你有所启发
+- 将`vmprint`的原型定义在***kernel/defs.h\***中，这样你就可以在`exec.c`中调用它了
+- 在你的`printf`调用中使用`%p`来打印像上面示例中的完成的64比特的十六进制PTE和地址
 
 
 
-### 退出xv6，回到终端
+ QUESTION
 
-在xv6中，**先同时按`ctrl+a`，然后松开，最后只按`x`**，即可退出xv6
+根据文本中的图3-4解释`vmprint`的输出。page 0包含什么？page 2中是什么？在用户模式下运行时，进程是否可以读取/写入page 1映射的内存？
 
-### 可能遇到的问题
+## A kernel page table per process (hard)
 
-#### 安装相关软件时的网络问题
+Xv6有一个单独的用于在内核中执行程序时的内核页表。内核页表直接映射（恒等映射）到物理地址，也就是说内核虚拟地址`x`映射到物理地址仍然是`x`。Xv6还为每个进程的用户地址空间提供了一个单独的页表，只包含该进程用户内存的映射，从虚拟地址0开始。因为内核页表不包含这些映射，所以用户地址在内核中无效。因此，当内核需要使用在系统调用中传递的用户指针（例如，传递给`write()`的缓冲区指针）时，内核必须首先将指针转换为物理地址。本节和下一节的目标是允许内核直接解引用用户指针。
 
-- 原因：下载时需要连接到国外网站
-- 解决方案：使用清华源
 
-#### 最新版本
 
-可以使用MIT[最新课程](https://pdos.csail.mit.edu/6.S081/2023/schedule.html)的版本，实验内容有部分差异link0
+ YOUR JOB
 
-## 调试和编程的平台
+你的第一项工作是修改内核来让每一个进程在内核中执行时使用它自己的内核页表的副本。修改`struct proc`来为每一个进程维护一个内核页表，修改调度程序使得切换进程时也切换内核页表。对于这个步骤，每个进程的内核页表都应当与现有的的全局内核页表完全一致。如果你的`usertests`程序正确运行了，那么你就通过了这个实验。
 
-### 调试平台
+阅读本作业开头提到的章节和代码；了解虚拟内存代码的工作原理后，正确修改虚拟内存代码将更容易。页表设置中的错误可能会由于缺少映射而导致陷阱，可能会导致加载和存储影响到意料之外的物理页存页面，并且可能会导致执行来自错误内存页的指令。
 
-软件要求：在windos中安装VSCode（必须），在**Ubuntu-20.04**子系统中安装Vim（视个人需要）
+**提示：**
 
-建议使用print函数（即调用C语言库的print函数，在特定的地方打印日志）或者GDB调试
+- 在`struct proc`中为进程的内核页表增加一个字段
+- 为一个新进程生成一个内核页表的合理方案是实现一个修改版的`kvminit`，这个版本中应当创造一个新的页表而不是修改`kernel_pagetable`。你将会考虑在`allocproc`中调用这个函数
+- 确保每一个进程的内核页表都关于该进程的内核栈有一个映射。在未修改的XV6中，所有的内核栈都在`procinit`中设置。你将要把这个功能部分或全部的迁移到`allocproc`中
+- 修改`scheduler()`来加载进程的内核页表到核心的`satp`寄存器(参阅`kvminithart`来获取启发)。不要忘记在调用完`w_satp()`后调用`sfence_vma()`
+- 没有进程运行时`scheduler()`应当使用`kernel_pagetable`
+- 在`freeproc`中释放一个进程的内核页表
+- 你需要一种方法来释放页表，而不必释放叶子物理内存页面。
+- 调式页表时，也许`vmprint`能派上用场
+- 修改XV6本来的函数或新增函数都是允许的；你或许至少需要在***kernel/vm.c\***和***kernel/proc.c\***中这样做（但不要修改***kernel/vmcopyin.c\***, ***kernel/stats.c\***, ***user/usertests.c\***, 和***user/stats.c\***）
+- 页表映射丢失很可能导致内核遭遇页面错误。这将导致打印一段包含`sepc=0x00000000XXXXXXXX`的错误提示。你可以在***kernel/kernel.asm\***通过查询`XXXXXXXX`来定位错误。
 
-- 如何使用GDB调试？
-  过程中需要打开两个终端，一个用来启动qemu，一个用来正常debug（调试）
-  建议debug时，启动qemu只用一个cpu
-  
-  第一步，在一个终端中输入
-  
-  ```bash
-  $ make CPUS=1 qemu-gdb
-  ```
-  
-  会显示如下内容：
-  
-  ```bash
-  *** Now run 'gdb' in another window.
-  qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 -S -gdb tcp::26000
-  ```
-  
-  第二步，在另一个终端中输入
-  
-  ```bash
-  $ gdb-multiarch kernel/kernel
-  ```
-  
-  会显示如下内容，从而在这个终端进行调试
-  
-  ```bash
-  GNU gdb (Ubuntu 9.2-0ubuntu1~20.04.1) 9.2
-  Copyright (C) 2020 Free Software Foundation, Inc.
-  License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
-  This is free software: you are free to change and redistribute it.
-  There is NO WARRANTY, to the extent permitted by law.
-  Type "show copying" and "show warranty" for details.
-  This GDB was configured as "x86_64-linux-gnu".
-  Type "show configuration" for configuration details.
-  For bug reporting instructions, please see:
-  <http://www.gnu.org/software/gdb/bugs/>.
-  Find the GDB manual and other documentation resources online at:
-      <http://www.gnu.org/software/gdb/documentation/>.
-  
-  For help, type "help".
-  Type "apropos word" to search for commands related to "word"...
-  Reading symbols from kernel/kernel...
-  The target architecture is assumed to be riscv:rv64
-  0x0000000000001000 in ?? ()
-  (gdb)
-  ```
+## Simplify `copyin`/`copyinstr`（hard）
 
-进入GDB终端调试页面后如何进行调试，可以参考[link2](https://www.bilibili.com/video/BV1DY4y1a7YD/?spm_id_from=333.788&vd_source=167c726c8eff4e6707afa7867f993bb4)中文视频、[link3](https://www.bilibili.com/video/BV19k4y1C7kA?p=2&vd_source=167c726c8eff4e6707afa7867f993bb4)英文视频（这个主要看最后一部分）
+内核的`copyin`函数读取用户指针指向的内存。它通过将用户指针转换为内核可以直接解引用的物理地址来实现这一点。这个转换是通过在软件中遍历进程页表来执行的。在本部分的实验中，您的工作是将用户空间的映射添加到每个进程的内核页表（上一节中创建），以允许`copyin`（和相关的字符串函数`copyinstr`）直接解引用用户指针。
 
-也可以使用VSCode图形化GDB调试，参考[link4](https://hitsz-cslab.gitee.io/os-labs/remote_env_gdb/)、[link5](https://hitsz-cslab.gitee.io/os-labs/remote_env_gdb2/)
 
-### 编程平台
 
-建议在终端安装Vim进行编程，或者链接到VSCode编程平台进行编程
+ YOUR JOB
 
-- 如何链接到VSCode编程平台？
-  第一步，在VSCode安装插件Remote - WSL
-  第二步，在**Ubuntu-20.04**子系统的终端页面中，进入项目页面，即是输入指令
+将定义在***kernel/vm.c\***中的`copyin`的主题内容替换为对`copyin_new`的调用（在***kernel/vmcopyin.c\***中定义）；对`copyinstr`和`copyinstr_new`执行相同的操作。为每个进程的内核页表添加用户地址映射，以便`copyin_new`和`copyinstr_new`工作。如果`usertests`正确运行并且所有`make grade`测试都通过，那么你就完成了此项作业。
 
-  ```bash
-  $ cd xv6-labs-2021
-  ```
+此方案依赖于用户的虚拟地址范围不与内核用于自身指令和数据的虚拟地址范围重叠。Xv6使用从零开始的虚拟地址作为用户地址空间，幸运的是内核的内存从更高的地址开始。然而，这个方案将用户进程的最大大小限制为小于内核的最低虚拟地址。内核启动后，在XV6中该地址是`0xC000000`，即PLIC寄存器的地址；请参见***kernel/vm.c\***中的`kvminit()`、***kernel/memlayout.h\***和文中的图3-4。您需要修改xv6，以防止用户进程增长到超过PLIC的地址。
 
-  第三步，链接到VSCode编程平台，即是输入指令
+**一些提示：**
 
-  ```bash
-  $ code .
-  ```
+- 先用对`copyin_new`的调用替换`copyin()`，确保正常工作后再去修改`copyinstr`
+- 在内核更改进程的用户映射的每一处，都以相同的方式更改进程的内核页表。包括`fork()`, `exec()`, 和`sbrk()`.
+- 不要忘记在`userinit`的内核页表中包含第一个进程的用户页表
+- 用户地址的PTE在进程的内核页表中需要什么权限？(在内核模式下，无法访问设置了`PTE_U`的页面）
+- 别忘了上面提到的PLIC限制
 
-## 参考
+Linux使用的技术与您已经实现的技术类似。直到几年前，许多内核在用户和内核空间中都为当前进程使用相同的自身进程页表，并为用户和内核地址进行映射以避免在用户和内核空间之间切换时必须切换页表。然而，这种设置允许边信道攻击，如Meltdown和Spectre。
 
-[Fall 2021: 6.S081](https://pdos.csail.mit.edu/6.S081/2021/)
 
-[WSL官网](https://learn.microsoft.com/zh-cn/windows/wsl/)
 
-[Ubuntu官网](https://cn.ubuntu.com/)
+ QUESTION
 
-[安装WSL2并添加子系统Ubuntu20.04视频链接](https://www.bilibili.com/video/BV1mX4y177dJ/)
+解释为什么在`copyin_new()`中需要第三个测试`srcva + len < srcva`：给出`srcva`和`len`值的例子，这样的值将使前两个测试为假（即它们不会导致返回-1），但是第三个测试为真 （导致返回-1）。
 
+# 可选的挑战练习
+
+- 使用超级页来减少页表中PTE的数量
+- 扩展您的解决方案以支持尽可能大的用户程序；也就是说，消除用户程序小于PLIC的限制
+- 取消映射用户进程的第一页，以便使对空指针的解引用将导致错误。用户文本段必须从非0处开始，例如4096
