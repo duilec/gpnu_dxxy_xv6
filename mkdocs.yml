@@ -1,5 +1,5 @@
-site_name: hello world
-# site_url: https://squidfunk.github.io/mkdocs-material/
+site_name: gpnu-dxxy-xv6
+site_url: https://github.com/duilec/gpnu_dxxy_xv6
 site_author: duilec
 
 theme:
@@ -8,15 +8,15 @@ theme:
   palette:
     # Palette toggle for light mode
     - scheme: default
-      primary: white
-      accent: cyan # 链接等可交互元件的高亮色
+      primary: indigo # or use 'white'
+      accent: cyan # 链接等可交互元件的高亮色 
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
 
     # Palette toggle for dark mode
     - scheme: slate
-      primary: black
+      primary: black # or use 'blue'
       accent: cyan # 链接等可交互元件的高亮色
       toggle:
         icon: material/brightness-4
@@ -42,15 +42,40 @@ theme:
     repo: fontawesome/brands/github #右上角图标
 
 # edit_uri: edit/main/docs # 编辑按钮跳转的链接，右上角，但是在文章内部的右上角
-# repo_url: https://github.com/Wcowin/mymkdocs # 右上角点击跳转的链接
-# repo_name: Wcowin.github.io # 右上角的名字
+repo_url: https://github.com/duilec/gpnu_dxxy_xv6 # 右上角点击跳转的链接
+repo_name: duilec/gpnu_dxxy_xv6 # 右上角的名字
 
 nav:
-  - Home: index.md
-  - Getting started:
-    - a: getting_started/index.md
-  - Others:
-    - a: others/index.md
+  #- Home: index.md
+  ##- Home: home/index.md
+  #- Getting started:
+  #  - a: getting_started/index.md
+  #- Labs:
+  #  - lab0: labs/lab0.md
+  #  - lab1: labs/lab1.md
+  #  - lab2: labs/lab2.md
+  #  - lab3: labs/lab3.md
+  #  - lab4: labs/lab4.md
+  #  - lab5: labs/lab5.md
+  #  - lab6: labs/lab6.md
+  #  - lab7: labs/lab7.md
+  #  - lab8: labs/lab8.md
+  #  - lab9: labs/lab9.md
+  #  - lab10: labs/lab10.md
+  #- Questions:
+  #  - a: questions/index.md
+  #- Others:
+  #  - a: others/index.md
+  - home: index.md
+  - lab0 启动Xv6: lab0.md
+  - lab1 工具程序: lab1.md
+  - lab2 系统调用: lab2.md
+  - lab3 多线程: lab3.md
+  - lab4 页表实验: lab4.md
+  - lab5 锁的机制: lab5.md
+  - lab6 文件系统: lab6.md
+  - lab7 外部设备: lab7.md
+  - 资源: resource.md
 
 copyright: Copyright &copy; duilec # 左下角的版权声明
 

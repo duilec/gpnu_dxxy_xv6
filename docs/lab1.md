@@ -1,8 +1,8 @@
-#  Lab1: Xv6 and Unix utilities
+#  Lab1：工具程序
 
 ##  实验任务
 
-###  切换到util分支
+切换到util分支
 
 ```bash
 $ cd xv6-labs-2021
@@ -13,7 +13,51 @@ Switched to a new branch 'util'
 
 如何获取xv6源代码参考lab0
 
-### sleep(难度：Easy)
+### uptime
+
+难度：简单
+
+工具程序`uptime`的功能是显示Xv6启动之后的计时数。一个滴答(tick)是由xv6内核定义的时间概念，即来自定时器芯片的两个中断之间的时间。您的解决方案应该在文件*user/uptime.c*中。
+
+**提示：**
+
+- 在你开始编码之前，请阅读《book-riscv-rev1》的第一章
+- 看看其他的一些程序（如*/user/echo.c, /user/grep.c, /user/rm.c*）查看如何获取传递给程序的命令行参数
+- 使用系统调用`uptime`
+- 请参阅*kernel/sysproc.c*以实现`uptime`系统调用的xv6内核代码，*user/user.h*提供了`uptime`的声明以便其他程序调用，用汇编程序编写的*user/usys.S*可以帮助`uptime`从用户区跳转到内核区。
+- 确保`main`函数调用`exit()`以退出程序。
+- 将你的`uptime`程序添加到*Makefile*中的`UPROGS`中；完成之后，`make qemu`将编译您的程序，并且您可以从xv6的shell运行它。
+- 看看Kernighan和Ritchie编著的《C程序设计语言》（第二版）来了解C语言。
+
+从xv6 shell运行程序：
+
+```bash
+$ make qemu
+...
+init: starting sh
+$ uptime
+21 ticks in xv6
+```
+
+ticks的数值是任意的，如果不同，解决方案也是正确的。运行`make grade`看看你是否真的通过了测试。
+
+请注意，`make grade`运行所有测试，包括下面作业的测试。如果要对一项作业运行成绩测试，请键入（不要启动XV6，在外部终端下使用）：
+
+```bash
+$ ./grade-lab-util uptime
+```
+
+这将运行与`sleep`匹配的成绩测试。或者，您可以键入：
+
+```bash
+$ make GRADEFLAGS=uptime grade
+```
+
+效果是一样的。
+
+### sleep
+
+难度：简单
 
 实现xv6的UNIX程序`sleep`：您的`sleep`应该暂停到用户指定的计时数。一个滴答(tick)是由xv6内核定义的时间概念，即来自定时器芯片的两个中断之间的时间。您的解决方案应该在文件*user/sleep.c*中
 
@@ -56,7 +100,9 @@ $ make GRADEFLAGS=sleep grade
 
 效果是一样的。
 
-### pingpong（难度：Easy）
+### pingpong
+
+难度：简单
 
 编写一个使用UNIX系统调用的程序来在两个进程之间“ping-pong”一个字节，请使用两个管道，每个方向一个。父进程应该向子进程发送一个字节;子进程应该打印“`<pid>: received ping`”，其中`<pid>`是进程ID，并在管道中写入字节发送给父进程，然后退出;父级应该从读取从子进程而来的字节，打印“`<pid>: received pong`”，然后退出。您的解决方案应该在文件*user/pingpong.c*中。
 
@@ -83,7 +129,9 @@ $
 
 如果您的程序在两个进程之间交换一个字节并产生如上所示的输出，那么您的解决方案是正确的。
 
-### Primes(素数，难度：Moderate/Hard)
+### Primes
+
+难度：困难
 
 使用管道编写prime sieve(筛选素数)的并发版本。这个想法是由Unix管道的发明者Doug McIlroy提出的。请查看[这个网站](http://swtch.com/~rsc/thread/)(翻译在下面)，该网页中间的图片和周围的文字解释了如何做到这一点。您的解决方案应该在*user/primes.c*文件中。
 
@@ -119,7 +167,9 @@ prime 31
 $
 ```
 
-### find（难度：Moderate）
+### find
+
+难度：中等
 
 写一个简化版本的UNIX的`find`程序：查找目录树中具有特定名称的所有文件，你的解决方案应该放在*user/find.c*
 
@@ -148,9 +198,9 @@ $ find . b
 $
 ```
 
-### xargs（难度：Moderate）
+### xargs
 
-
+难度：中等
 
 编写一个简化版UNIX的`xargs`程序：它从标准输入中按行读取，并且为每一行执行一个命令，将行作为参数提供给命令。你的解决方案应该在*user/xargs.c*
 
@@ -204,16 +254,8 @@ $ $
 
 你可能不得不回去修复你的`find`程序中的bug。输出有许多`$`，因为xv6 shell没有意识到它正在处理来自文件而不是控制台的命令，并为文件中的每个命令打印`$`。
 
-## 可选的挑战练习
+### sh
 
-- 编写一个`uptime`程序，使用`uptime`系统调用以滴答为单位打印计算机正常运行时间。（easy）
-- 在`find`程序的名称匹配中支持正则表达式。*grep.c*对正则表达式有一些基本的支持。（easy）
-- xv6 shell（*user/sh.c*）只是另一个用户程序，您可以对其进行改进。它是一个最小的shell，缺少建立在真实shell中的许多特性。例如，
-  - 在处理**文件中的**shell命令时，将shell修改为不打印$（moderate）
-  - 将shell修改为支持`wait`（easy）
-  - 将shell修改为支持用“`;`”分隔的命令列表（moderate）
-  - 通过实现左括号“`(`” 以及右括号“`)`”来修改shell以支持子shell（moderate）
-  - 将shell修改为支持`tab`键补全（easy）
-  - 修改shell使其支持命令历史记录（moderate）
-  - 或者您希望shell执行的任何其他操作。
-- 如果您非常雄心勃勃，可能需要修改内核以支持所需的内核特性；xv6支持的并不多。
+难度：中等
+
+该实验的要求是修改shell，使其在处理文件中的shell命令时，将shell修改为不打印多余的$。

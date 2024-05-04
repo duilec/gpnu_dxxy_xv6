@@ -1,4 +1,4 @@
-# 启动xv6并调试
+# Lab0：启动xv6并调试
 
 ## 环境配置
 
@@ -67,10 +67,9 @@ Cloning into 'xv6-labs-2021'...
 $ cd xv6-labs-2021
 ```
 
-第二步，暂存当前分支，并切换分支到`util`
+第二步，切换分支到`util`
 
 ```bash
-$ git stash
 $ git checkout util
 ```
 
