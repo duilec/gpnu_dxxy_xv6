@@ -61,10 +61,10 @@ sudo apt-get install git build-essential gdb-multiarch qemu-system-misc gcc-risc
 第一步，克隆xv6
 
 ```bash
-$ git clone https://github.com/duilec/xv6-2021-labs.git
+$ git clone https://github.com/duilec/xv6-labs-2023.git
 Cloning into 'xv6-labs-2021'...
 ...
-$ cd xv6-labs-2021
+$ cd xv6-labs-2023
 ```
 
 第二步，切换分支到`util`
