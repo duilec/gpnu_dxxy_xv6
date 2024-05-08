@@ -1,0 +1,1046 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+        <meta name="author" content="duilec">
+      
+      
+        <link rel="canonical" href="https://github.com/duilec/gpnu_dxxy_xv6/lab3/">
+      
+      
+        <link rel="prev" href="../lab2/">
+      
+      
+        <link rel="next" href="../lab4/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.21">
+    
+    
+      
+        <title>lab3 多线程 - gpnu-dxxy-xv6</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.66ac8b77.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="cyan">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#lab3" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href=".." title="gpnu-dxxy-xv6" class="md-header__button md-logo" aria-label="gpnu-dxxy-xv6" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            gpnu-dxxy-xv6
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              lab3 多线程
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="cyan"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="cyan"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12c0-2.42-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="分享" aria-label="分享" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7 0-.24-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91 1.61 0 2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08Z"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/duilec/gpnu_dxxy_xv6" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    duilec/gpnu_dxxy_xv6
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="标签" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+    
+  
+  home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../lab0/" class="md-tabs__link">
+        
+  
+    
+  
+  lab0 启动Xv6
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../lab1/" class="md-tabs__link">
+        
+  
+    
+  
+  lab1 工具程序
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../lab2/" class="md-tabs__link">
+        
+  
+    
+  
+  lab2 系统调用
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+    
+  
+  lab3 多线程
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../lab4/" class="md-tabs__link">
+        
+  
+    
+  
+  lab4 页表实验
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../lab5/" class="md-tabs__link">
+        
+  
+    
+  
+  lab5 锁的机制
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../lab6/" class="md-tabs__link">
+        
+  
+    
+  
+  lab6 文件系统
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../lab7/" class="md-tabs__link">
+        
+  
+    
+  
+  lab7 外部设备
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../resource/" class="md-tabs__link">
+        
+  
+    
+  
+  资源
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="gpnu-dxxy-xv6" class="md-nav__button md-logo" aria-label="gpnu-dxxy-xv6" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    gpnu-dxxy-xv6
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/duilec/gpnu_dxxy_xv6" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    duilec/gpnu_dxxy_xv6
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lab0/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    lab0 启动Xv6
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lab1/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    lab1 工具程序
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lab2/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    lab2 系统调用
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    lab3 多线程
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    lab3 多线程
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      用户级线程切换
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      使用用户级线程
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#barrier" class="md-nav__link">
+    <span class="md-ellipsis">
+      barrier
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#xv6" class="md-nav__link">
+    <span class="md-ellipsis">
+      在Xv6中实现内核级线程和用户级线程
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lab4/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    lab4 页表实验
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lab5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    lab5 锁的机制
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lab6/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    lab6 文件系统
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lab7/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    lab7 外部设备
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../resource/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    资源
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      用户级线程切换
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      使用用户级线程
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#barrier" class="md-nav__link">
+    <span class="md-ellipsis">
+      barrier
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#xv6" class="md-nav__link">
+    <span class="md-ellipsis">
+      在Xv6中实现内核级线程和用户级线程
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="lab3">Lab3：多线程<a class="headerlink" href="#lab3" title="Permanent link">&para;</a></h1>
+<p>这个实验将让你熟悉多线程编程。你将在用户级线程包中实现线程之间的切换，使用多线程加速程序，并实现一个barrier。</p>
+<p>在编写代码之前，你应该确保已经阅读了 xv6 书中的“第 7 章：调度”并研究了相应的代码。</p>
+<p>要开始这个实验，请切换到 thread 分支：</p>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1">1</a></span>
+<span class="normal"><a href="#__codelineno-0-2">2</a></span>
+<span class="normal"><a href="#__codelineno-0-3">3</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a>$<span class="w"> </span>git<span class="w"> </span>fetch
+<a id="__codelineno-0-2" name="__codelineno-0-2"></a>$<span class="w"> </span>git<span class="w"> </span>checkout<span class="w"> </span>thread
+<a id="__codelineno-0-3" name="__codelineno-0-3"></a>$<span class="w"> </span>make<span class="w"> </span>clean
+</code></pre></div></td></tr></table></div>
+<h3 id="_1">用户级线程切换<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h3>
+<p>难度：中等</p>
+<p>在这个实验中，你将设计用户级线程系统的上下文切换机制，并实现它。为了帮助你开始，你的 xv6 包含两个文件 <code>user/uthread.c</code> 和 <code>user/uthread_switch.S</code>，以及一个在 Makefile 中的规则来构建一个 uthread 程序。<code>uthread.c</code> 包含了大部分用户级线程包的代码，以及三个简单测试线程的代码。线程包缺少一些创建线程和在线程之间进行切换的代码。</p>
+<p>你的任务是制定一个计划来创建线程，并保存/恢复寄存器以在线程之间进行切换，并实现该计划。完成后，<code>make grade</code> 应该显示你的解决方案通过了 uthread 测试。</p>
+<p>完成后，当你在 xv6 上运行 uthread 时，应该看到以下输出（三个线程可能以不同的顺序启动）：</p>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-1-1"> 1</a></span>
+<span class="normal"><a href="#__codelineno-1-2"> 2</a></span>
+<span class="normal"><a href="#__codelineno-1-3"> 3</a></span>
+<span class="normal"><a href="#__codelineno-1-4"> 4</a></span>
+<span class="normal"><a href="#__codelineno-1-5"> 5</a></span>
+<span class="normal"><a href="#__codelineno-1-6"> 6</a></span>
+<span class="normal"><a href="#__codelineno-1-7"> 7</a></span>
+<span class="normal"><a href="#__codelineno-1-8"> 8</a></span>
+<span class="normal"><a href="#__codelineno-1-9"> 9</a></span>
+<span class="normal"><a href="#__codelineno-1-10">10</a></span>
+<span class="normal"><a href="#__codelineno-1-11">11</a></span>
+<span class="normal"><a href="#__codelineno-1-12">12</a></span>
+<span class="normal"><a href="#__codelineno-1-13">13</a></span>
+<span class="normal"><a href="#__codelineno-1-14">14</a></span>
+<span class="normal"><a href="#__codelineno-1-15">15</a></span>
+<span class="normal"><a href="#__codelineno-1-16">16</a></span>
+<span class="normal"><a href="#__codelineno-1-17">17</a></span>
+<span class="normal"><a href="#__codelineno-1-18">18</a></span>
+<span class="normal"><a href="#__codelineno-1-19">19</a></span>
+<span class="normal"><a href="#__codelineno-1-20">20</a></span>
+<span class="normal"><a href="#__codelineno-1-21">21</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1"></a>$<span class="w"> </span>make<span class="w"> </span>qemu
+<a id="__codelineno-1-2" name="__codelineno-1-2"></a>...
+<a id="__codelineno-1-3" name="__codelineno-1-3"></a>$<span class="w"> </span>uthread
+<a id="__codelineno-1-4" name="__codelineno-1-4"></a>thread_a<span class="w"> </span>started
+<a id="__codelineno-1-5" name="__codelineno-1-5"></a>thread_b<span class="w"> </span>started
+<a id="__codelineno-1-6" name="__codelineno-1-6"></a>thread_c<span class="w"> </span>started
+<a id="__codelineno-1-7" name="__codelineno-1-7"></a>thread_c<span class="w"> </span><span class="m">0</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8"></a>thread_a<span class="w"> </span><span class="m">0</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9"></a>thread_b<span class="w"> </span><span class="m">0</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10"></a>thread_c<span class="w"> </span><span class="m">1</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11"></a>thread_a<span class="w"> </span><span class="m">1</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12"></a>thread_b<span class="w"> </span><span class="m">1</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13"></a>...
+<a id="__codelineno-1-14" name="__codelineno-1-14"></a>thread_c<span class="w"> </span><span class="m">99</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15"></a>thread_a<span class="w"> </span><span class="m">99</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16"></a>thread_b<span class="w"> </span><span class="m">99</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17"></a>thread_c:<span class="w"> </span><span class="nb">exit</span><span class="w"> </span>after<span class="w"> </span><span class="m">100</span>
+<a id="__codelineno-1-18" name="__codelineno-1-18"></a>thread_a:<span class="w"> </span><span class="nb">exit</span><span class="w"> </span>after<span class="w"> </span><span class="m">100</span>
+<a id="__codelineno-1-19" name="__codelineno-1-19"></a>thread_b:<span class="w"> </span><span class="nb">exit</span><span class="w"> </span>after<span class="w"> </span><span class="m">100</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20"></a>thread_schedule:<span class="w"> </span>no<span class="w"> </span>runnable<span class="w"> </span>threads
+<a id="__codelineno-1-21" name="__codelineno-1-21"></a>$
+</code></pre></div></td></tr></table></div>
+<p>此输出来自三个测试线程，每个线程都有一个循环，打印一行并将 CPU 让给其他线程。</p>
+<p>但是，此时，由于没有上下文切换代码，你将看不到任何输出。</p>
+<p>你需要在 <code>user/uthread.c</code> 的 <code>thread_create()</code> 和 <code>thread_schedule()</code> 中添加代码，以及在 <code>user/uthread_switch.S</code> 中的 <code>thread_switch</code> 中添加代码。一个目标是确保当 <code>thread_schedule()</code> 第一次运行给定线程时，线程执行传递给 <code>thread_create()</code> 的函数，使用自己的栈。另一个目标是确保 <code>thread_switch</code> 保存了要切换出去的线程的寄存器，并恢复了要切换到的线程的寄存器，并返回到后者线程上次离开的地方。你需要决定在哪里保存/恢复寄存器；修改 <code>struct thread</code> 来保存寄存器是一个好计划。你需要在 <code>thread_schedule</code> 中添加一个调用 <code>thread_switch</code>；你可以传递你需要的任何参数给 <code>thread_switch</code>，但意图是从线程 <code>t</code> 切换到 <code>next_thread</code>。</p>
+<p>一些提示：</p>
+<ul>
+<li><code>thread_switch</code> 需要保存/恢复仅保存调用者的寄存器。为什么？</li>
+<li>你可以在 <code>user/uthread.asm</code> 中看到 <code>uthread</code> 的汇编代码，这可能有助于调试。</li>
+<li>为了测试你的代码，通过 <code>riscv64-linux-gnu-gdb</code> 逐步执行你的 <code>thread_switch</code> 可能有所帮助。你可以这样开始：</li>
+</ul>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Text Only</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-2-1">1</a></span>
+<span class="normal"><a href="#__codelineno-2-2">2</a></span>
+<span class="normal"><a href="#__codelineno-2-3">3</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1"></a>(gdb) file user/_uthread
+<a id="__codelineno-2-2" name="__codelineno-2-2"></a>Reading symbols from user/_uthread...
+<a id="__codelineno-2-3" name="__codelineno-2-3"></a>(gdb) b uthread.c:60
+</code></pre></div></td></tr></table></div>
+<p>这在 <code>uthread.c</code> 的第 60 行设置了断点。断点可能（也可能不会）在你甚至运行 <code>uthread</code> 之前触发。这是如何发生的？</p>
+<p>一旦你的 xv6 shell 运行了，输入 <code>uthread</code>，gdb 将在第 60 行中断。如果你从另一个进程触发了断点，请继续，直到你在 uthread 进程中触发了断点。现在，你可以输入如下命令来检查 uthread 的状态：</p>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Text Only</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-3-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1"></a>(gdb) p/x *next_thread
+</code></pre></div></td></tr></table></div>
+<p>使用 "x"，你可以检查内存位置的内容：</p>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Text Only</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-4-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1"></a>(gdb) x/x next_thread-&gt;stack
+</code></pre></div></td></tr></table></div>
+<p>你可以跳到 <code>thread_switch</code> 的开头：</p>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Text Only</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-5-1">1</a></span>
+<span class="normal"><a href="#__codelineno-5-2">2</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1"></a>(gdb) b thread_switch
+<a id="__codelineno-5-2" name="__codelineno-5-2"></a>(gdb) c
+</code></pre></div></td></tr></table></div>
+<p>你可以使用以下命令逐步执行汇编指令：</p>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Text Only</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-6-1">1</a></span>
+<span class="normal"><a href="#__codelineno-6-2">2</a></span>
+<span class="normal"><a href="#__codelineno-6-3">3</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1"></a>bash
+<a id="__codelineno-6-2" name="__codelineno-6-2"></a>Copy code
+<a id="__codelineno-6-3" name="__codelineno-6-3"></a>(gdb) si
+</code></pre></div></td></tr></table></div>
+<p>GDB 的在线文档在这里。</p>
+<h3 id="_2">使用用户级线程<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h3>
+<p>难度：中等</p>
+<p>在这个任务中，你将使用线程和锁来并行编程，使用哈希表。你应该在具有多个核心的实际 Linux 或 MacOS 计算机上完成这个任务。大多数最近的笔记本电脑都有多核处理器。</p>
+<p>此任务使用 UNIX pthread 线程库。你可以从手册页中找到有关它的信息，使用 <code>man pthreads</code> 命令，你也可以在网上找到相关信息，例如这里、这里和这里。</p>
+<p>文件 <code>notxv6/ph.c</code> 包含一个简单的哈希表，如果从单个线程使用则正确，但在多个线程使用时则不正确。在你的主 xv6 目录下（也许是 <code>~/xv6-labs-2021</code>），输入以下命令：</p>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-7-1">1</a></span>
+<span class="normal"><a href="#__codelineno-7-2">2</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1"></a>$<span class="w"> </span>make<span class="w"> </span>ph
+<a id="__codelineno-7-2" name="__codelineno-7-2"></a>$<span class="w"> </span>./ph<span class="w"> </span><span class="m">1</span>
+</code></pre></div></td></tr></table></div>
+<p>请注意，为了构建 <code>ph</code>，Makefile 使用你的操作系统的 gcc，而不是 6.1810 工具。<code>ph</code> 的参数指定执行 put 和 get 操作的线程数。运行一段时间后，<code>ph 1</code> 会产生类似于以下内容的输出：</p>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-8-1">1</a></span>
+<span class="normal"><a href="#__codelineno-8-2">2</a></span>
+<span class="normal"><a href="#__codelineno-8-3">3</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1"></a><span class="m">100000</span><span class="w"> </span>puts,<span class="w"> </span><span class="m">3</span>.991<span class="w"> </span>seconds,<span class="w"> </span><span class="m">25056</span><span class="w"> </span>puts/second
+<a id="__codelineno-8-2" name="__codelineno-8-2"></a><span class="m">0</span>:<span class="w"> </span><span class="m">0</span><span class="w"> </span>keys<span class="w"> </span>missing
+<a id="__codelineno-8-3" name="__codelineno-8-3"></a><span class="m">100000</span><span class="w"> </span>gets,<span class="w"> </span><span class="m">3</span>.981<span class="w"> </span>seconds,<span class="w"> </span><span class="m">25118</span><span class="w"> </span>gets/second
+</code></pre></div></td></tr></table></div>
+<p>你看到的数字可能与此示例输出不同，差别可能会达到两倍或更多，这取决于你的计算机速度如何、是否有多核心以及是否正在执行其他任务。</p>
+<p><code>ph</code> 运行两个基准测试。首先，它通过调用 <code>put()</code> 添加大量键到哈希表中，并打印每秒放入的实际数量。然后，它通过 <code>get()</code> 从哈希表中获取键。它打印了应该作为 put 的结果而不在哈希表中的键的数量（在本例中为零），以及它实现的每秒 get 数量。</p>
+<p>你可以告诉 <code>ph</code> 一次性使用多个线程来同时使用其哈希表，方法是给它一个大于一的参数。试试 <code>ph 2</code>：</p>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-9-1">1</a></span>
+<span class="normal"><a href="#__codelineno-9-2">2</a></span>
+<span class="normal"><a href="#__codelineno-9-3">3</a></span>
+<span class="normal"><a href="#__codelineno-9-4">4</a></span>
+<span class="normal"><a href="#__codelineno-9-5">5</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1"></a>$<span class="w"> </span>./ph<span class="w"> </span><span class="m">2</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2"></a><span class="m">100000</span><span class="w"> </span>puts,<span class="w"> </span><span class="m">1</span>.885<span class="w"> </span>seconds,<span class="w"> </span><span class="m">53044</span><span class="w"> </span>puts/second
+<a id="__codelineno-9-3" name="__codelineno-9-3"></a><span class="m">1</span>:<span class="w"> </span><span class="m">16579</span><span class="w"> </span>keys<span class="w"> </span>missing
+<a id="__codelineno-9-4" name="__codelineno-9-4"></a><span class="m">0</span>:<span class="w"> </span><span class="m">16579</span><span class="w"> </span>keys<span class="w"> </span>missing
+<a id="__codelineno-9-5" name="__codelineno-9-5"></a><span class="m">200000</span><span class="w"> </span>gets,<span class="w"> </span><span class="m">4</span>.322<span class="w"> </span>seconds,<span class="w"> </span><span class="m">46274</span><span class="w"> </span>gets/second
+</code></pre></div></td></tr></table></div>
+<p><code>ph 2</code> 输出的第一行指示当两个线程同时向哈希表中添加条目时，它们实现了每秒 53,044 次插入的总速率。这大约是从运行 <code>ph 1</code> 的单个线程得到的速率的两倍。这是一个优秀的“并行加速”，大约是两倍的核心产生了两倍的工作量（即两倍的速率）。</p>
+<p>然而，显示 <code>16579 keys missing</code> 的两行指示应该在哈希表中但实际不在那里的大量键。也就是说，put 应该将这些键添加到哈希表中，但是出了问题。查看 <code>notxv6/ph.c</code>，特别是 <code>put()</code> 和 <code>insert()</code>。</p>
+<p>为什么使用 2 个线程会导致缺少键，但是使用 1 个线程不会呢？找出一个使用 2 个线程的事件序列，可以导致键丢失。在 <code>answers-thread.txt</code> 中提交你的序列并附上简短的解释。</p>
+<p>为了避免这种事件序列，可以在 <code>notxv6/ph.c</code> 的 <code>put</code> 和 <code>get</code> 中插入锁定和解锁语句，以便确保使用两个线程时缺少的键始终为 0。相关的 pthread 调用如下：</p>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">C</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-10-1">1</a></span>
+<span class="normal"><a href="#__codelineno-10-2">2</a></span>
+<span class="normal"><a href="#__codelineno-10-3">3</a></span>
+<span class="normal"><a href="#__codelineno-10-4">4</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1"></a><span class="n">pthread_mutex_t</span><span class="w"> </span><span class="n">lock</span><span class="p">;</span><span class="w">            </span><span class="c1">// 声明一个锁</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2"></a><span class="n">pthread_mutex_init</span><span class="p">(</span><span class="o">&amp;</span><span class="n">lock</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">);</span><span class="w"> </span><span class="c1">// 初始化锁</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3"></a><span class="n">pthread_mutex_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">lock</span><span class="p">);</span><span class="w">       </span><span class="c1">// 获取锁</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4"></a><span class="n">pthread_mutex_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">lock</span><span class="p">);</span><span class="w">     </span><span class="c1">// 释放锁</span>
+</code></pre></div></td></tr></table></div>
+<p>当 <code>make grade</code> 表明你的代码通过了 <code>ph_safe</code> 测试时，你完成了任务，这要求使用两个线程时缺少的键为零。此时，ph_fast 测试失败是可以接受的。</p>
+<p>不要忘记调用 <code>pthread_mutex_init()</code>。首先用一个线程测试你的代码，然后用两个线程测试它。它是正确的吗（即你消除了丢失的键）？两个线程的版本是否实现了并行加速（即每单位时间完成了更多的总工作）？</p>
+<p>有一些情况下，并发的 <code>put()</code> 不会在哈希表中读取或写入重叠的内存，因此不需要锁来保护彼此。你能修改 <code>ph.c</code> 以利用这样的情况来为某些 <code>put()</code> 获取并行加速吗？提示：每个哈希桶一个锁？</p>
+<p>修改你的代码，使一些 <code>put</code> 操作并行运行，同时保持正确性。当 <code>make grade</code> 表明你的代码通过了 <code>ph_safe</code> 和 <code>ph_fast</code> 测试时，你完成了任务。<code>ph_fast</code> 测试要求两个线程的情况下， <code>put()</code> 每秒运行的次数至少是一个线程的 1.25 倍。</p>
+<h3 id="barrier">barrier<a class="headerlink" href="#barrier" title="Permanent link">&para;</a></h3>
+<p>难度：中等</p>
+<p>在这个任务中，你将实现一个屏障：在应用程序中的一个点，所有参与的线程都必须等待，直到所有其他参与的线程也到达该点。你将使用 pthread 条件变量，它是一种类似于 xv6 的 sleep 和 wakeup 的序列协调技术。</p>
+<p>你应该在一个实际的计算机上完成这个任务（不是 xv6，不是 qemu）。</p>
+<p>文件 <code>notxv6/barrier.c</code> 包含一个有问题的屏障。</p>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-11-1">1</a></span>
+<span class="normal"><a href="#__codelineno-11-2">2</a></span>
+<span class="normal"><a href="#__codelineno-11-3">3</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1"></a>$<span class="w"> </span>make<span class="w"> </span>barrier
+<a id="__codelineno-11-2" name="__codelineno-11-2"></a>$<span class="w"> </span>./barrier<span class="w"> </span><span class="m">2</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3"></a>barrier:<span class="w"> </span>notxv6/barrier.c:42:<span class="w"> </span>thread:<span class="w"> </span>Assertion<span class="w"> </span><span class="sb">`</span><span class="nv">i</span><span class="w"> </span><span class="o">==</span><span class="w"> </span>t<span class="err">&#39;</span><span class="w"> </span>failed.
+</code></pre></div></td></tr></table></div>
+<p>2 指定了在屏障上同步的线程数（<code>barrier.c</code> 中的 <code>nthread</code>）。每个线程执行一个循环。在每个循环迭代中，一个线程调用 <code>barrier()</code>，然后睡眠一段随机微秒数。断言触发了，因为一个线程在其他线程到达屏障之前离开了屏障。期望的行为是，每个线程在 <code>barrier()</code> 中阻塞，直到它们所有的 <code>nthreads</code> 都调用了 <code>barrier()</code>。</p>
+<p>你的目标是实现期望的屏障行为。除了你在 ph 任务中见过的锁原语外，你还需要以下新的 pthread 原语；在这里 和 这里 可以找到详情。</p>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">C</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-12-1">1</a></span>
+<span class="normal"><a href="#__codelineno-12-2">2</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1"></a><span class="n">pthread_cond_wait</span><span class="p">(</span><span class="o">&amp;</span><span class="n">cond</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">mutex</span><span class="p">);</span><span class="w">  </span><span class="c1">// 在条件上休眠，释放锁 mutex，在唤醒时重新获得</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2"></a><span class="n">pthread_cond_broadcast</span><span class="p">(</span><span class="o">&amp;</span><span class="n">cond</span><span class="p">);</span><span class="w">     </span><span class="c1">// 唤醒所有正在等待条件的线程</span>
+</code></pre></div></td></tr></table></div>
+<p>确保你的解决方案通过了 <code>make grade</code> 的屏障测试。</p>
+<p><code>pthread_cond_wait</code> 在调用时释放互斥锁，并在返回时重新获取互斥锁。</p>
+<p>我们已经给你了 <code>barrier_init()</code>。你的任务是实现 <code>barrier()</code>，以便不会发生 panic。我们已经为你定义了 <code>struct barrier</code>；它的字段供你使用。</p>
+<p>有两个问题使你的任务复杂化了：</p>
+<ol>
+<li>你必须处理一系列的屏障调用，我们将每次所有线程都到达屏障的情况称为一个 round。<code>bstate.round</code> 记录当前 round。每次所有线程到达屏障后，你应该递增 <code>bstate.round</code>。</li>
+<li>你必须处理一个线程在其他线程退出屏障之前就开始新一轮循环的情况。特别是，你正在从一个 round 到另一个 round 重新使用 <code>bstate.nthread</code> 变量。确保一个线程离开屏障并在其他线程之前开始新一轮循环时，不要增加 <code>bstate.nthread</code>，而上一个 round 仍在使用它。</li>
+</ol>
+<p>使用一个、两个以上两个线程测试你的代码。</p>
+<h3 id="xv6">在Xv6中实现内核级线程和用户级线程<a class="headerlink" href="#xv6" title="Permanent link">&para;</a></h3>
+<p>难度：困难</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; duilec
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/duilec" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="mailto:<elelsyqrlc42@163.com>" target="_blank" rel="noopener" title="" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M48 64C21.5 64 0 85.5 0 112c0 15.1 7.1 29.3 19.2 38.4l217.6 163.2c11.4 8.5 27 8.5 38.4 0l217.6-163.2c12.1-9.1 19.2-23.3 19.2-38.4 0-26.5-21.5-48-48-48H48zM0 176v208c0 35.3 28.7 64 64 64h384c35.3 0 64-28.7 64-64V176L294.4 339.2a63.9 63.9 0 0 1-76.8 0L0 176z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.top", "search.suggest", "search.highlight", "navigation.expand", "search.share"], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.a7c05c9e.min.js"></script>
+      
+    
+  </body>
+</html>
