@@ -10,8 +10,8 @@
 
 要开始这个实验，请切换到 syscall 分支：
 
-```
-bashCopy code$ git fetch
+```bash
+$ git fetch
 $ git checkout syscall
 $ make clean
 ```
@@ -24,8 +24,8 @@ $ make clean
 
 为了帮助你熟悉 gdb，请运行 `make qemu-gdb`，然后在另一个窗口中启动 gdb（参见指导页面上的 gdb 项目）。一旦你有了两个窗口，请在 gdb 窗口中键入：
 
-```
-gdbCopy code(gdb) b syscall
+```gdb
+(gdb) b syscall
 Breakpoint 1 at 0x80002142: file kernel/syscall.c, line 243.
 (gdb) c
 Continuing.
@@ -44,15 +44,13 @@ layout 命令将窗口分成两部分，显示 gdb 在源代码中的位置。ba
 p->trapframe->a7 的值是多少？这个值代表什么？（提示：查看 user/initcode.S，xv6 启动的第一个用户程序） 处理器正在内核模式下运行，我们可以打印特权寄存器，如 sstatus（请参阅 RISC-V 特权指令）：
 
 ```
-gdb
-Copy code
 (gdb) p /x $sstatus
 ```
 
 处理器之前的模式是什么？ 在这个实验的后续部分（或后续的实验中），你可能会犯一个编程错误，导致 xv6 内核崩溃。例如，将语句 `num = p->trapframe->a7;` 替换为 `num = * (int *) 0;`，在 syscall 的开头，运行 `make qemu`，你会看到类似以下的内容：
 
-```
-makefileCopy codexv6 kernel is booting
+```bash
+xv6 kernel is booting
 
 hart 2 starting
 hart 1 starting
@@ -65,8 +63,8 @@ panic: kerneltrap
 
 记录内核崩溃时程序计数器所在的汇编指令。哪个寄存器对应于变量 num？ 要检查处理器和内核在发生故障的指令时的状态，启动 gdb，并在发生故障的 epc 处设置断点，如下所示：
 
-```
-gdbCopy code(gdb) b *0x000000008000215a
+```gdb
+(gdb) b *0x000000008000215a
 Breakpoint 1 at 0x8000215a: file kernel/syscall.c, line 247.
 (gdb) layout asm
 (gdb) c
@@ -80,9 +78,7 @@ Thread 3 hit Breakpoint 1, syscall () at kernel/syscall.c:247
 
 内核为什么崩溃？提示：查看文本中的图 3-3；地址 0 在内核地址空间中被映射吗？scause 中的值是否证实了这一点？（请参阅 RISC-V 特权指令中 scause 的描述） 请注意，scause 是内核崩溃时打印的，但通常你需要查看其他信息来追踪导致内核崩溃的问题。例如，要找出内核崩溃时正在运行的用户进程，可以打印出该进程的名称：
 
-```
-gdb
-Copy code
+```gdb
 (gdb) p p->name
 ```
 
@@ -98,8 +94,8 @@ Copy code
 
 我们提供了一个 trace 用户级程序，它运行另一个启用了跟踪的程序（见 user/trace.c）。完成后，你应该看到如下输出：
 
-```
-bashCopy code$ trace 32 grep hello README
+```bash
+$ trace 32 grep hello README
 3: syscall read -> 1023
 3: syscall read -> 966
 3: syscall read -> 70
@@ -155,8 +151,8 @@ $
 
 - 运行 `make qemu`；user/sysinfotest.c 会编译失败。添加 `sysinfo` 系统调用，遵循与前面任务相同的步骤。要在 user/user.h 中声明 sysinfo() 的原型，你需要预先声明 `struct sysinfo` 的存在：
 
-  ```
-  cCopy codestruct sysinfo;
+  ```c
+  struct sysinfo;
   int sysinfo(struct sysinfo *);
   ```
 

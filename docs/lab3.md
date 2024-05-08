@@ -22,8 +22,8 @@ $ make clean
 
 完成后，当你在 xv6 上运行 uthread 时，应该看到以下输出（三个线程可能以不同的顺序启动）：
 
-```
-bashCopy code$ make qemu
+```bash
+$ make qemu
 ...
 $ uthread
 thread_a started
@@ -58,8 +58,8 @@ $
 - 你可以在 `user/uthread.asm` 中看到 `uthread` 的汇编代码，这可能有助于调试。
 - 为了测试你的代码，通过 `riscv64-linux-gnu-gdb` 逐步执行你的 `thread_switch` 可能有所帮助。你可以这样开始：
 
-```
-bashCopy code(gdb) file user/_uthread
+```gdb
+(gdb) file user/_uthread
 Reading symbols from user/_uthread...
 (gdb) b uthread.c:60
 ```
@@ -68,24 +68,20 @@ Reading symbols from user/_uthread...
 
 一旦你的 xv6 shell 运行了，输入 `uthread`，gdb 将在第 60 行中断。如果你从另一个进程触发了断点，请继续，直到你在 uthread 进程中触发了断点。现在，你可以输入如下命令来检查 uthread 的状态：
 
-```
-bash
-Copy code
+```gdb
 (gdb) p/x *next_thread
 ```
 
 使用 "x"，你可以检查内存位置的内容：
 
-```
-bash
-Copy code
+```gdb
 (gdb) x/x next_thread->stack
 ```
 
 你可以跳到 `thread_switch` 的开头：
 
-```
-bashCopy code(gdb) b thread_switch
+```gdb
+(gdb) b thread_switch
 (gdb) c
 ```
 
@@ -109,15 +105,15 @@ GDB 的在线文档在这里。
 
 文件 `notxv6/ph.c` 包含一个简单的哈希表，如果从单个线程使用则正确，但在多个线程使用时则不正确。在你的主 xv6 目录下（也许是 `~/xv6-labs-2021`），输入以下命令：
 
-```
-bashCopy code$ make ph
+```bash
+$ make ph
 $ ./ph 1
 ```
 
 请注意，为了构建 `ph`，Makefile 使用你的操作系统的 gcc，而不是 6.1810 工具。`ph` 的参数指定执行 put 和 get 操作的线程数。运行一段时间后，`ph 1` 会产生类似于以下内容的输出：
 
-```
-bashCopy code100000 puts, 3.991 seconds, 25056 puts/second
+```bash
+100000 puts, 3.991 seconds, 25056 puts/second
 0: 0 keys missing
 100000 gets, 3.981 seconds, 25118 gets/second
 ```
@@ -128,8 +124,8 @@ bashCopy code100000 puts, 3.991 seconds, 25056 puts/second
 
 你可以告诉 `ph` 一次性使用多个线程来同时使用其哈希表，方法是给它一个大于一的参数。试试 `ph 2`：
 
-```
-bashCopy code$ ./ph 2
+```bash
+$ ./ph 2
 100000 puts, 1.885 seconds, 53044 puts/second
 1: 16579 keys missing
 0: 16579 keys missing
@@ -144,8 +140,8 @@ bashCopy code$ ./ph 2
 
 为了避免这种事件序列，可以在 `notxv6/ph.c` 的 `put` 和 `get` 中插入锁定和解锁语句，以便确保使用两个线程时缺少的键始终为 0。相关的 pthread 调用如下：
 
-```
-cCopy codepthread_mutex_t lock;            // 声明一个锁
+```c
+pthread_mutex_t lock;            // 声明一个锁
 pthread_mutex_init(&lock, NULL); // 初始化锁
 pthread_mutex_lock(&lock);       // 获取锁
 pthread_mutex_unlock(&lock);     // 释放锁
@@ -169,8 +165,8 @@ pthread_mutex_unlock(&lock);     // 释放锁
 
 文件 `notxv6/barrier.c` 包含一个有问题的屏障。
 
-```
-bashCopy code$ make barrier
+```bash
+$ make barrier
 $ ./barrier 2
 barrier: notxv6/barrier.c:42: thread: Assertion `i == t' failed.
 ```
@@ -179,8 +175,8 @@ barrier: notxv6/barrier.c:42: thread: Assertion `i == t' failed.
 
 你的目标是实现期望的屏障行为。除了你在 ph 任务中见过的锁原语外，你还需要以下新的 pthread 原语；在这里 和 这里 可以找到详情。
 
-```
-cCopy codepthread_cond_wait(&cond, &mutex);  // 在条件上休眠，释放锁 mutex，在唤醒时重新获得
+```c
+pthread_cond_wait(&cond, &mutex);  // 在条件上休眠，释放锁 mutex，在唤醒时重新获得
 pthread_cond_broadcast(&cond);     // 唤醒所有正在等待条件的线程
 ```
 

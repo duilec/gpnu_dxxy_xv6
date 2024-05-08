@@ -7,8 +7,8 @@
 - 第6章：“锁定”以及相应的代码。
 - 第8.1至8.3节：“概述”，“缓冲区缓存层”和“代码：缓冲区缓存”。
 
-```
-bashCopy code$ git fetch
+```bash
+$ git fetch
 $ git checkout lock
 $ make clean
 ```

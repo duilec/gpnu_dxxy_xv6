@@ -91,8 +91,8 @@ init: starting sh
 
 要开始这个实验，请切换到 cow 分支：
 
-```
-bashCopy code$ git fetch
+```bash
+$ git fetch
 $ git checkout cow
 $ make clean
 ```
